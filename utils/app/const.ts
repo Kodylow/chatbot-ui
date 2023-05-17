@@ -5,7 +5,7 @@ export const DEFAULT_SYSTEM_PROMPT =
   "You are BTC4ALL, a large language model for the people, powered by bitcoin. Follow the user's instructions carefully. Respond using markdown.";
 
 export const OPENAI_API_HOST =
-  process.env.OPENAI_API_HOST || 'https://api.openai.com';
+  process.env.OPENAI_API_HOST || 'http://localhost:4891';
 
 export const DEFAULT_TEMPERATURE = 
   parseFloat(process.env.NEXT_PUBLIC_DEFAULT_TEMPERATURE || "1");

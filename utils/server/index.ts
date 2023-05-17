@@ -9,6 +9,15 @@ import {
   createParser,
 } from 'eventsource-parser';
 
+import { Configuration, OpenAIApi } from 'openai';
+
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+  basePath: 'https://localhost:4891/v1'
+});
+
+const openai = new OpenAIApi(configuration);
+
 export class OpenAIError extends Error {
   type: string;
   param: string;
@@ -29,37 +38,12 @@ export const OpenAIStream = async (
   temperature : number,
   messages: Message[],
 ) => {
-  let url = `${OPENAI_API_HOST}/v1/chat/completions`;
-  if (OPENAI_API_TYPE === 'azure') {
-    url = `${OPENAI_API_HOST}/openai/deployments/${AZURE_DEPLOYMENT_ID}/chat/completions?api-version=${OPENAI_API_VERSION}`;
-  }
+  let url = `http://localhost:4891/v1/chat/completions`;
 
-  console.log(JSON.stringify({
-    ...(OPENAI_API_TYPE === 'openai' && {model: model.id}),
-    messages: [
-      {
-        role: 'system',
-        content: systemPrompt,
-      },
-      ...messages,
-    ],
-    max_tokens: 1000,
-    temperature: temperature,
-    stream: true,
-  }));
-
+  console.log("Starting call to GPT4ALL...")
   const res = await fetch(url, {
     headers: {
-      'Content-Type': 'application/json',
-      ...(OPENAI_API_TYPE === 'openai' && {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
-      }),
-      ...(OPENAI_API_TYPE === 'azure' && {
-        'api-key': `${process.env.OPENAI_API_KEY}`
-      }),
-      ...((OPENAI_API_TYPE === 'openai' && OPENAI_ORGANIZATION) && {
-        'OpenAI-Organization': OPENAI_ORGANIZATION,
-      }),
+      'Content-Type': 'application/json'
     },
     method: 'POST',
     body: JSON.stringify({
@@ -76,12 +60,18 @@ export const OpenAIStream = async (
       stream: true,
     }),
   });
+  console.log("Received response from GPT4ALL...")
+
+  const result = await res.json();
+  console.log("Received JSON from GPT4ALL...")
+  console.log(result)
 
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
 
+  console.log("Checking status...")
+  console.log("Status: ", res.status)
   if (res.status !== 200) {
-    const result = await res.json();
     if (result.error) {
       throw new OpenAIError(
         result.error.message,
@@ -98,34 +88,5 @@ export const OpenAIStream = async (
     }
   }
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      const onParse = (event: ParsedEvent | ReconnectInterval) => {
-        if (event.type === 'event') {
-          const data = event.data;
-
-          try {
-            const json = JSON.parse(data);
-            if (json.choices[0].finish_reason != null) {
-              controller.close();
-              return;
-            }
-            const text = json.choices[0].delta.content;
-            const queue = encoder.encode(text);
-            controller.enqueue(queue);
-          } catch (e) {
-            controller.error(e);
-          }
-        }
-      };
-
-      const parser = createParser(onParse);
-
-      for await (const chunk of res.body as any) {
-        parser.feed(decoder.decode(chunk));
-      }
-    },
-  });
-
-  return stream;
+  return result.choices[0].text;
 };
