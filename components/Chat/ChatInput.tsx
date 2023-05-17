@@ -26,7 +26,28 @@ import HomeContext from '@/pages/api/home/home.context';
 
 import { PluginSelect } from './PluginSelect';
 import { PromptList } from './PromptList';
+import { InvoiceModal } from './InvoiceModal';
 import { VariableModal } from './VariableModal';
+
+type LightningInvoice = {
+  status: string;
+  successAction: {
+    tag: string;
+    message: string;
+  };
+  verify: string;
+  routes: any[];
+  pr: string;
+};
+
+type LightningAddressResponse = {
+  callback: string;
+  maxSendable: number;
+  minSendable: number;
+  metadata: string;
+  commentAllowed: number;
+  tag: string;
+};
 
 interface Props {
   onSend: (message: Message, plugin: Plugin | null) => void;
@@ -62,6 +83,10 @@ export const ChatInput = ({
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showPluginSelect, setShowPluginSelect] = useState(false);
   const [plugin, setPlugin] = useState<Plugin | null>(null);
+  const [lightningInvoice, setLightningInvoice] =
+    useState<LightningInvoice | null>(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [onSuccess, setOnSuccess] = useState<() => void>(() => () => {});
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
 
@@ -87,7 +112,52 @@ export const ChatInput = ({
     updatePromptListVisibility(value);
   };
 
-  const handleSend = () => {
+  const fetchLightningInvoice = async () => {
+    let lightningCallback = '';
+    const [username, host] = "kodylow@getalby.com".split('@');
+    const milliSatsPerMessage = 10000;
+    if (!username || !host) {
+      alert('Invalid Lightning address');
+      return;
+    }
+    try {
+      const response = await fetch(
+        `https://${host}/.well-known/lnurlp/${username}`,
+      );
+
+      if (response.ok) {
+        const json: LightningAddressResponse = await response.json();
+        if (json.tag === 'payRequest') {
+          lightningCallback = json.callback;
+        } else {
+          alert('Invalid Lightning address');
+        }
+      } else {
+        alert('Invalid Lightning address');
+      }
+    } catch (error) {
+      alert(`Failed to verify Lightning address:${error}`);
+    }
+
+    try {
+      console.log('Lighting callback: ', lightningCallback);
+      const response = await fetch(
+        lightningCallback + '?amount=' + milliSatsPerMessage,
+      );
+      console.log('Response: ', response);
+      if (response.ok) {
+        const invoice: LightningInvoice = await response.json();
+        return invoice;
+      } else {
+        throw new Error('Failed to fetch lightning invoice');
+      }
+    } catch (error) {
+      console.error('Failed to fetch lightning invoice:', error);
+      return null;
+    }
+  };
+
+  const handleSend = async () => {
     if (messageIsStreaming) {
       return;
     }
@@ -97,13 +167,81 @@ export const ChatInput = ({
       return;
     }
 
-    onSend({ role: 'user', content }, plugin);
-    setContent('');
-    setPlugin(null);
+    // Set the onSuccess function before opening the modal
+    setOnSuccess(() => {
+      return () => {
+        onSend({ role: 'user', content }, plugin);
+        setContent('');
+        setPlugin(null)
 
-    if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
-      textareaRef.current.blur();
+        if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
+          textareaRef.current.blur();
+        }
+
+        // Close the modal
+        setShowInvoiceModal(false);
+      };
+    });
+
+    // Fetch the lightning invoice before opening the modal
+    const invoice = await fetchLightningInvoice();
+    if (!invoice) {
+      alert('Error fetching invoice');
+      return;
     }
+    console.log(invoice);
+    setLightningInvoice(invoice);
+    if (!invoice) {
+      alert(
+        'Failed to fetch lightning invoice. Please set your lightning address.',
+      );
+      return;
+    }
+    let paymentSuccessful = false;
+    if (typeof window.webln !== 'undefined') {
+      try {
+        await window.webln.enable();
+        const { preimage } = await window.webln.sendPayment(
+          invoice && invoice.pr,
+        );
+        paymentSuccessful = !!preimage;
+      } catch {
+        // Open the modal and wait for the payment
+        console.log('In catch');
+        setShowInvoiceModal(true);
+        paymentSuccessful = await new Promise((resolve) => {
+          // Handle payment failure or modal close
+          const paymentFailedOrModalClosed = () => {
+            resolve(false);
+          };
+        });
+      }
+    } else {
+      // Open the modal and wait for the payment
+      console.log('showing modal');
+      setShowInvoiceModal(true);
+      paymentSuccessful = await new Promise((resolve) => {
+        // Handle payment failure or modal close
+        const paymentFailedOrModalClosed = () => {
+          resolve(false);
+        };
+      });
+    }
+
+    // If payment is successful, send the message
+    if (paymentSuccessful) {
+      onSend({ role: 'user', content }, plugin);
+      setContent('');
+
+      if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
+        textareaRef.current.blur();
+      }
+    } else {
+      alert('Payment failed or timed out. Please try again.');
+    }
+
+    // Close the modal
+    setShowInvoiceModal(false);
   };
 
   const handleStopConversation = () => {
@@ -375,6 +513,13 @@ export const ChatInput = ({
               variables={variables}
               onSubmit={handleSubmit}
               onClose={() => setIsModalVisible(false)}
+            />
+          )}
+          {showInvoiceModal && (
+            <InvoiceModal
+              lightningInvoice={lightningInvoice}
+              setShowModal={setShowInvoiceModal}
+              onSuccess={onSuccess}
             />
           )}
         </div>
