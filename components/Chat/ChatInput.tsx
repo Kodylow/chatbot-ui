@@ -189,7 +189,6 @@ export const ChatInput = ({
       alert('Error fetching invoice');
       return;
     }
-    console.log(invoice);
     setLightningInvoice(invoice);
     if (!invoice) {
       alert(
@@ -207,7 +206,6 @@ export const ChatInput = ({
         paymentSuccessful = !!preimage;
       } catch {
         // Open the modal and wait for the payment
-        console.log('In catch');
         setShowInvoiceModal(true);
         paymentSuccessful = await new Promise((resolve) => {
           // Handle payment failure or modal close

@@ -76,6 +76,7 @@ export const exportData = () => {
   let folders = localStorage.getItem('folders');
   let prompts = localStorage.getItem('prompts');
 
+
   if (history) {
     history = JSON.parse(history);
   }

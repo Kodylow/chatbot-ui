@@ -1,4 +1,5 @@
 import {
+  IconBolt,
   IconBulbFilled,
   IconCheck,
   IconTrash,
@@ -18,6 +19,27 @@ import SidebarActionButton from '@/components/Buttons/SidebarActionButton';
 
 import PromptbarContext from '../PromptBar.context';
 import { PromptModal } from './PromptModal';
+import { InvoiceModal } from '@/components/Chat/InvoiceModal';
+
+type LightningInvoice = {
+  status: string;
+  successAction: {
+    tag: string;
+    message: string;
+  };
+  verify: string;
+  routes: any[];
+  pr: string;
+};
+
+type LightningAddressResponse = {
+  callback: string;
+  maxSendable: number;
+  minSendable: number;
+  metadata: string;
+  commentAllowed: number;
+  tag: string;
+};
 
 interface Props {
   prompt: Prompt;
@@ -34,6 +56,117 @@ export const PromptComponent = ({ prompt }: Props) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState('');
+  const [lightningInvoice, setLightningInvoice] =
+    useState<LightningInvoice | null>(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [onSuccess, setOnSuccess] = useState<() => void>(() => () => {});
+
+  const fetchLightningInvoice = async () => {
+    let lightningCallback = '';
+    const [username, host] = "kodylow@getalby.com".split('@');
+    const milliSatsPerPrompt = 100000;
+    if (!username || !host) {
+      alert('Invalid Lightning address');
+      return;
+    }
+    try {
+      const response = await fetch(
+        `https://${host}/.well-known/lnurlp/${username}`,
+      );
+
+      if (response.ok) {
+        const json: LightningAddressResponse = await response.json();
+        if (json.tag === 'payRequest') {
+          lightningCallback = json.callback;
+        } else {
+          alert('Invalid Lightning address');
+        }
+      } else {
+        alert('Invalid Lightning address');
+      }
+    } catch (error) {
+      alert(`Failed to verify Lightning address:${error}`);
+    }
+
+    try {
+      console.log('Lighting callback: ', lightningCallback);
+      const response = await fetch(
+        lightningCallback + '?amount=' + milliSatsPerPrompt,
+      );
+      console.log('Response: ', response);
+      if (response.ok) {
+        const invoice: LightningInvoice = await response.json();
+        return invoice;
+      } else {
+        throw new Error('Failed to fetch lightning invoice');
+      }
+    } catch (error) {
+      console.error('Failed to fetch lightning invoice:', error);
+      return null;
+    }
+  };
+
+  const handleInvoice = async () => {
+    setOnSuccess(() => {
+      return () => {
+        prompt.isUnlocked = true;
+
+        // Close the modal
+        setShowInvoiceModal(false);
+      };
+    });
+
+    const invoice = await fetchLightningInvoice();
+    if (!invoice) {
+      alert('Error fetching invoice');
+      return;
+    }
+    setLightningInvoice(invoice);
+    if (!invoice) {
+      alert(
+        'Failed to fetch lightning invoice. Please set your lightning address.',
+      );
+      return;
+    }
+    let paymentSuccessful = false;
+    if (typeof window.webln !== 'undefined') {
+      try {
+        await window.webln.enable();
+        const { preimage } = await window.webln.sendPayment(
+          invoice && invoice.pr,
+        );
+        paymentSuccessful = !!preimage;
+      } catch {
+        // Open the modal and wait for the payment
+        setShowInvoiceModal(true);
+        paymentSuccessful = await new Promise((resolve) => {
+          // Handle payment failure or modal close
+          const paymentFailedOrModalClosed = () => {
+            resolve(false);
+          };
+        });
+      }
+    } else {
+      // Open the modal and wait for the payment
+      console.log('showing modal');
+      setShowInvoiceModal(true);
+      paymentSuccessful = await new Promise((resolve) => {
+        // Handle payment failure or modal close
+        const paymentFailedOrModalClosed = () => {
+          resolve(false);
+        };
+      });
+    }
+
+    if (paymentSuccessful) {
+      onSuccess();
+    } else {
+      alert('Payment failed');
+    }
+
+    setShowInvoiceModal(false);
+    setLightningInvoice(null);
+  }
 
   const handleUpdate = (prompt: Prompt) => {
     handleUpdatePrompt(prompt);
@@ -82,7 +215,7 @@ export const PromptComponent = ({ prompt }: Props) => {
         draggable="true"
         onClick={(e) => {
           e.stopPropagation();
-          setShowModal(true);
+          prompt.isUnlocked ? setShowModal(true) : handleInvoice();
         }}
         onDragStart={(e) => handleDragStart(e, prompt)}
         onMouseLeave={() => {
@@ -91,7 +224,7 @@ export const PromptComponent = ({ prompt }: Props) => {
           setRenameValue('');
         }}
       >
-        <IconBulbFilled size={18} />
+        {prompt.isUnlocked ? <IconBulbFilled size={18}/> : <IconBolt size={18}/>}
 
         <div className="relative max-h-5 flex-1 overflow-hidden text-ellipsis whitespace-nowrap break-all pr-4 text-left text-[12.5px] leading-3">
           {prompt.name}
@@ -110,7 +243,7 @@ export const PromptComponent = ({ prompt }: Props) => {
         </div>
       )}
 
-      {!isDeleting && !isRenaming && (
+      {!isDeleting && !isRenaming && prompt.isUnlocked && (
         <div className="absolute right-1 z-10 flex text-gray-300">
           <SidebarActionButton handleClick={handleOpenDeleteModal}>
             <IconTrash size={18} />
@@ -124,6 +257,15 @@ export const PromptComponent = ({ prompt }: Props) => {
           onClose={() => setShowModal(false)}
           onUpdatePrompt={handleUpdate}
         />
+      )}
+
+      {showInvoiceModal && (
+        <InvoiceModal
+        lightningInvoice={lightningInvoice}
+        setShowModal={setShowInvoiceModal}
+        onSuccess={onSuccess}
+      />
+          
       )}
     </div>
   );
