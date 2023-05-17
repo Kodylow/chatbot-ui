@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from 'react-query';
-
+import { SUPER_PROMPTS } from '@/utils/app/const';
 import { GetServerSideProps } from 'next';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -283,9 +283,16 @@ const Home = ({
       dispatch({ field: 'folders', value: JSON.parse(folders) });
     }
 
-    const prompts = localStorage.getItem('prompts');
-    if (prompts) {
-      dispatch({ field: 'prompts', value: JSON.parse(prompts) });
+    let super_prompts = SUPER_PROMPTS;
+    let local_prompts = localStorage.getItem('prompts');
+    if (local_prompts) {
+      let all_prompts = [...super_prompts, ...JSON.parse(local_prompts)]
+      // remove duplicates
+      all_prompts.filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i)
+      console.log(all_prompts)
+      dispatch({ field: 'prompts', value: all_prompts });
+    } else {
+      dispatch({ field: 'prompts', value: super_prompts });
     }
 
     const conversationHistory = localStorage.getItem('conversationHistory');

@@ -60,6 +60,7 @@ export const PromptComponent = ({ prompt }: Props) => {
     useState<LightningInvoice | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [onSuccess, setOnSuccess] = useState<() => void>(() => () => {});
+  const [isUnlocked, setIsUnlocked] = useState(prompt.isUnlocked);
 
   const fetchLightningInvoice = async () => {
     let lightningCallback = '';
@@ -107,14 +108,6 @@ export const PromptComponent = ({ prompt }: Props) => {
   };
 
   const handleInvoice = async () => {
-    setOnSuccess(() => {
-      return () => {
-        prompt.isUnlocked = true;
-
-        // Close the modal
-        setShowInvoiceModal(false);
-      };
-    });
 
     const invoice = await fetchLightningInvoice();
     if (!invoice) {
@@ -158,8 +151,10 @@ export const PromptComponent = ({ prompt }: Props) => {
       });
     }
 
+    console.log('paymentSuccessful: ', paymentSuccessful)
     if (paymentSuccessful) {
-      onSuccess();
+      prompt.isUnlocked = true;
+      setIsUnlocked(true);
     } else {
       alert('Payment failed');
     }
