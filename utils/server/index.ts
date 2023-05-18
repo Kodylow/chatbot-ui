@@ -50,7 +50,7 @@ export const OpenAIStream = async (
   temperature : number,
   messages: Message[],
 ) => {
-  let url = `http://localhost:8085/v1/chat/completions`;
+  let url = `http://localhost:4891/v1/chat/completions`;
 
   console.log("Starting call to GPT4ALL with model...")
   console.log(model)

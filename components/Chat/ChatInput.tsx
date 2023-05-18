@@ -114,7 +114,7 @@ export const ChatInput = ({
 
   const fetchLightningInvoice = async () => {
     let lightningCallback = '';
-    const [username, host] = "kodylow@getalby.com".split('@');
+    const [username, host] = "ruinedhalibut23@walletofsatoshi.com".split('@');
     const milliSatsPerMessage = 10000;
     if (!username || !host) {
       alert('Invalid Lightning address');

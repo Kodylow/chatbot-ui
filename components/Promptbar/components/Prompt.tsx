@@ -64,7 +64,7 @@ export const PromptComponent = ({ prompt }: Props) => {
 
   const fetchLightningInvoice = async () => {
     let lightningCallback = '';
-    const [username, host] = "kodylow@getalby.com".split('@');
+    const [username, host] = "ruinedhalibut23@walletofsatoshi.com".split('@');
     const milliSatsPerPrompt = 100000;
     if (!username || !host) {
       alert('Invalid Lightning address');
