@@ -49,8 +49,9 @@ export const OpenAIStream = async (
 ) => {
   let url = `http://localhost:8085/v1/chat/completions`;
 
-  console.log("Starting call to GPT4ALL...")
-  let res = await fetch(url, {
+  console.log("Starting call to GPT4ALL with model...")
+  console.log(model)
+  const res = await fetch(url, {
     headers: {
       'Content-Type': 'application/json'
     },
