@@ -35,6 +35,9 @@ export class OpenAIError extends Error {
 function parseInvoice(auth_header: string) {
     const rex = /LSAT macaroon="(.*?)", invoice="(.*?)"/i;
     let parts = auth_header.match(rex);
+    if (!parts) {
+        throw new Error("No match found");
+    }
     let macaroon = parts[1];
     let invoice = parts[2];
 
@@ -51,7 +54,7 @@ export const OpenAIStream = async (
 
   console.log("Starting call to GPT4ALL with model...")
   console.log(model)
-  const res = await fetch(url, {
+  let res = await fetch(url, {
     headers: {
       'Content-Type': 'application/json'
     },
@@ -88,9 +91,9 @@ export const OpenAIStream = async (
         const { preimage } = await window.webln.sendPayment(
           invoice_payload.invoice,
         );
-        paymentSuccessful = !!preimage;
+        const paymentSuccessful = !!preimage;
         
-        authorization = "LSAT " + invoice_payload.macaroon + ":" + preimage;
+        const authorization = "LSAT " + invoice_payload.macaroon + ":" + preimage;
         let new_headers = {
           'Content-Type': 'application/json',
           'Authorization': authorization,
