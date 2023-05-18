@@ -32,13 +32,22 @@ export class OpenAIError extends Error {
   }
 }
 
+function parseInvoice(auth_header: string) {
+    const rex = /LSAT macaroon="(.*?)", invoice="(.*?)"/i;
+    let parts = auth_header.match(rex);
+    let macaroon = parts[1];
+    let invoice = parts[2];
+
+    return { macaroon, invoice };
+}
+
 export const OpenAIStream = async (
   model: OpenAIModel,
   systemPrompt: string,
   temperature : number,
   messages: Message[],
 ) => {
-  let url = `http://localhost:4891/v1/chat/completions`;
+  let url = `http://localhost:8085/v1/chat/completions`;
 
   console.log("Starting call to GPT4ALL...")
   const res = await fetch(url, {
@@ -61,6 +70,22 @@ export const OpenAIStream = async (
     }),
   });
   console.log("Received response from GPT4ALL...")
+
+  if (res.status === 402) {
+        let l402_req = res.headers.get('www-authenticate');
+        console.log(l402_req);
+        if (!l402_req) {
+            throw new Error("No www-authenticate header found");
+        }
+        let invoice_payload = parseInvoice(l402_req);
+        console.log(invoice_payload);
+
+        await window.webln.enable();
+        const { preimage } = await window.webln.sendPayment(
+          invoice_payload.invoice,
+        );
+        paymentSuccessful = !!preimage;
+  }
 
   const result = await res.json();
   console.log("Received JSON from GPT4ALL...")
