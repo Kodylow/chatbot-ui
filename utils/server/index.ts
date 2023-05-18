@@ -50,7 +50,7 @@ export const OpenAIStream = async (
   let url = `http://localhost:8085/v1/chat/completions`;
 
   console.log("Starting call to GPT4ALL...")
-  const res = await fetch(url, {
+  let res = await fetch(url, {
     headers: {
       'Content-Type': 'application/json'
     },
@@ -71,8 +71,11 @@ export const OpenAIStream = async (
   });
   console.log("Received response from GPT4ALL...")
 
+    console.log(res);
+
   if (res.status === 402) {
         let l402_req = res.headers.get('www-authenticate');
+
         console.log(l402_req);
         if (!l402_req) {
             throw new Error("No www-authenticate header found");
@@ -85,8 +88,35 @@ export const OpenAIStream = async (
           invoice_payload.invoice,
         );
         paymentSuccessful = !!preimage;
+        
+        authorization = "LSAT " + invoice_payload.macaroon + ":" + preimage;
+        let new_headers = {
+          'Content-Type': 'application/json',
+          'Authorization': authorization,
+        }
+
+          console.log("DID L402 Starting call to GPT4ALL...")
+          res = await fetch(url, {
+            headers: new_headers,
+            method: 'POST',
+            body: JSON.stringify({
+              ...(OPENAI_API_TYPE === 'openai' && {model: model.id}),
+              messages: [
+                {
+                  role: 'system',
+                  content: systemPrompt,
+                },
+                ...messages,
+              ],
+              max_tokens: 1000,
+              temperature: temperature,
+              stream: true,
+            }),
+          });
+          console.log("Received L402 response from GPT4ALL...")
   }
 
+  console.log("trying to get json")
   const result = await res.json();
   console.log("Received JSON from GPT4ALL...")
   console.log(result)
