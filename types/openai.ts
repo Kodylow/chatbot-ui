@@ -8,7 +8,6 @@ export interface OpenAIModel {
 }
 
 export enum OpenAIModelID {
-  GPT_3_5 = 'chatgpt-gpt-3.5-turbo',
   GPT_4 = 'chatgpt-gpt-4',
   MPT_7B_CHAT = 'mpt-7b-chat',
   GPT4ALL_J_V13_GROOVY = 'gpt4all-j-v1.3-groovy',
@@ -22,7 +21,7 @@ export enum OpenAIModelID {
   STABLE_VICUNA_13BQ4_2 = 'stable-vicuna-13b.q4_2',
   VICUNA_13B_11_q4_2 = 'vicuna-13b-1.1-q4_2',
   VICUNA_7B_11_q4_2 = 'vicuna-7b-1.1-q4_2',
-  WIZARDLM_7B_q4_2 = 'wizardlm-7b.q4_2',
+  WIZARDLM_7B_q4_2 = 'chatgpt-gpt-3.5-turbo',
 
 }
 
@@ -107,12 +106,6 @@ export const OpenAIModels: Record<OpenAIModelID, OpenAIModel> = {
     name: 'WizardLM-7B.q4_2',
     maxLength: 24000,
     tokenLimit: 8000,
-  },
-  [OpenAIModelID.GPT_3_5]: {
-    id: OpenAIModelID.GPT_3_5,
-    name: 'GPT-3.5',
-    maxLength: 12000,
-    tokenLimit: 4000,
   },
   [OpenAIModelID.GPT_4]: {
     id: OpenAIModelID.GPT_4,
