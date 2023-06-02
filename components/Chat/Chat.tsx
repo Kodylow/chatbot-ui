@@ -46,8 +46,6 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
       selectedConversation,
       conversations,
       models,
-      apiKey,
-      pluginKeys,
       serverSideApiKeyIsSet,
       messageIsStreaming,
       modelError,
@@ -96,7 +94,6 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         const chatBody: ChatBody = {
           model: updatedConversation.model,
           messages: updatedConversation.messages,
-          key: apiKey,
           prompt: updatedConversation.prompt,
           temperature: updatedConversation.temperature,
         };
@@ -107,12 +104,6 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         } else {
           body = JSON.stringify({
             ...chatBody,
-            googleAPIKey: pluginKeys
-              .find((key) => key.pluginId === 'google-search')
-              ?.requiredKeys.find((key) => key.key === 'GOOGLE_API_KEY')?.value,
-            googleCSEId: pluginKeys
-              .find((key) => key.pluginId === 'google-search')
-              ?.requiredKeys.find((key) => key.key === 'GOOGLE_CSE_ID')?.value,
           });
         }
         const controller = new AbortController();
@@ -246,9 +237,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
       }
     },
     [
-      apiKey,
       conversations,
-      pluginKeys,
       selectedConversation,
       stopConversationRef,
     ],
@@ -349,7 +338,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
 
   return (
     <div className="relative flex-1 overflow-hidden bg-white dark:bg-[#343541]">
-      {window.webln ? (
+      {!window.webln ? (
         <div className="mx-auto flex h-full w-[300px] flex-col justify-center space-y-6 sm:w-[600px]">
           <div className="text-center text-4xl font-bold text-black dark:text-white">
             Welcome to Chat LN
@@ -363,12 +352,28 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             <div className="mb-2">
               Chat LN lets you pay for expensive language model API calls using lightning. We learn nothing about you except that you paid us!
             </div>
-            <div className="mb-2">
-              Please use a WebLN enabled application like Fedi on Mobile or Alby in the browser to use Chat LN.
+            <div className="mb-2 text-red-500 text-lg">
+              Please use a WebLN enabled application like Fedi (on Mobile) or Alby (in browser) to use Chat LN.
             </div>
           </div>
         </div>
-      ) : modelError ? (
+      ) : !serverSideApiKeyIsSet ? (
+        <div className="mx-auto flex h-full w-[300px] flex-col justify-center space-y-6 sm:w-[600px]">
+          <div className="text-center text-4xl font-bold text-black dark:text-white">
+            Welcome to Chat LN
+          </div>
+          <div className="text-center text-lg text-black dark:text-white">
+            <div className="mb-2 font-bold">
+              Important: Chat LN is a bitcoin & lightning enabled fork of Chatbot UI and is 100% unaffiliated with OpenAI.
+            </div>
+          </div>
+          <div className="text-center text-lg text-red-500">
+            <div className="mb-2">
+              Server side API key is not set. Please set it in the .env file and restart the server.
+            </div>
+          </div>
+        </div>
+      ): modelError ? (
         <ErrorMessageDiv error={modelError} />
       ) : (
         <>

@@ -6,8 +6,6 @@ import { PluginKey } from '@/types/plugin';
 import { Prompt } from '@/types/prompt';
 
 export interface HomeInitialState {
-  apiKey: string;
-  pluginKeys: PluginKey[];
   loading: boolean;
   lightMode: 'light' | 'dark';
   messageIsStreaming: boolean;
@@ -30,9 +28,7 @@ export interface HomeInitialState {
 }
 
 export const initialState: HomeInitialState = {
-  apiKey: '',
   loading: false,
-  pluginKeys: [],
   lightMode: 'dark',
   messageIsStreaming: false,
   modelError: null,

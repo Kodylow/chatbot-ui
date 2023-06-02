@@ -9,13 +9,16 @@ import wasm from '../../node_modules/@dqbd/tiktoken/lite/tiktoken_bg.wasm?module
 import tiktokenModel from '@dqbd/tiktoken/encoders/cl100k_base.json';
 import { Tiktoken, init } from '@dqbd/tiktoken/lite/init';
 
+const key = process.env.OPENAI_API_KEY;
+
 export const config = {
   runtime: 'edge',
 };
 
+
 const handler = async (req: Request): Promise<Response> => {
   try {
-    const { model, messages, key, prompt, temperature } = (await req.json()) as ChatBody;
+    const { model, messages, prompt, temperature } = (await req.json()) as ChatBody;
 
     await init((imports) => WebAssembly.instantiate(wasm, imports));
     const encoding = new Tiktoken(
@@ -37,6 +40,7 @@ const handler = async (req: Request): Promise<Response> => {
     const prompt_tokens = encoding.encode(promptToSend);
 
     let tokenCount = prompt_tokens.length;
+    console.log('tokenCount', tokenCount);
     let messagesToSend: Message[] = [];
 
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -52,7 +56,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     encoding.free();
 
-    const stream = await OpenAIStream(model, promptToSend, temperatureToUse, key, messagesToSend);
+    const stream = await OpenAIStream(model, promptToSend, temperatureToUse, (key ? key : ""), messagesToSend);
 
     return new Response(stream);
   } catch (error) {
