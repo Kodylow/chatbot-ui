@@ -398,11 +398,11 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                         Welcome to Chat LN
                     </div>
                     <div className="text-center text-gray-500 dark:text-gray-400">
-                        <div className="mb-2">
-                            Chat LN lets you pay for expensive language model API calls using lightning. We learn nothing about you except that you paid us!
-                        </div>
                         <div className="mb-2 text-red-500 text-lg">
                             Please use a WebLN enabled application like <a class="text-blue-500" href='https://fedi.xyz/builders' target="_blank">Fedi (on Mobile)</a> or <a href='https://getalby.com' target="_blank">Alby (in browser)</a> to use Chat LN.
+                        </div>
+                        <div className="mb-2">
+                            Chat LN lets you pay for expensive language model API calls using lightning. We learn nothing about you except that you paid us!
                         </div>
                     </div>
                 </div>
