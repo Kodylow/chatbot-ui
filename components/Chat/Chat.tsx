@@ -93,26 +93,24 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                     }
                     updatedConversation = {
                         ...selectedConversation,
-                        messages: [...updatedMessages, message],
+                        messages: [...updatedMessages],
                     };
                 } else {
                     updatedConversation = {
                         ...selectedConversation,
-                        messages: [...selectedConversation.messages, message],
                     };
                 }
-                homeDispatch({
-                    field: 'selectedConversation',
-                    value: updatedConversation,
-                });
+
                 homeDispatch({ field: 'loading', value: true });
                 homeDispatch({ field: 'messageIsStreaming', value: true });
+
                 const chatBody: ChatBody = {
                     model: updatedConversation.model,
-                    messages: updatedConversation.messages,
+                    messages: [...updatedConversation.messages, message],
                     prompt: updatedConversation.prompt,
                     temperature: updatedConversation.temperature,
                 };
+
                 const endpoint = getEndpoint(plugin);
                 let body;
                 if (!plugin) {
@@ -122,6 +120,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                         ...chatBody,
                     });
                 }
+
                 const controller = new AbortController();
                 let response = await fetch(endpoint, {
                     method: 'POST',
@@ -131,11 +130,11 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                     signal: controller.signal,
                     body,
                 });
+
                 // handle 402 payment required
                 if (response.status === 402) {
                     const auth_header = response.headers.get('www-authenticate');
                     let { macaroon, invoice } = decodeAuthHeader(auth_header ? auth_header : '');
-                    // remove double quotes from invoice
                     invoice = invoice.replace(/"/g, '');
                     if (typeof window.webln !== 'undefined') {
                         try {
@@ -169,12 +168,23 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                         }
                     }
                 }
+
                 if (!response.ok) {
                     homeDispatch({ field: 'loading', value: false });
                     homeDispatch({ field: 'messageIsStreaming', value: false });
                     toast.error(response.statusText);
                     return;
                 }
+
+                // Add the message to the conversation
+                updatedConversation = {
+                    ...updatedConversation,
+                    messages: [...updatedConversation.messages, message],
+                };
+                homeDispatch({
+                    field: 'selectedConversation',
+                    value: updatedConversation,
+                });
                 const data = response.body;
                 if (!data) {
                     homeDispatch({ field: 'loading', value: false });
@@ -399,7 +409,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                     </div>
                     <div className="text-center text-gray-500 dark:text-gray-400">
                         <div className="mb-2 text-red-500 text-lg">
-                            Please use a WebLN enabled application like <a class="text-blue-500" href='https://fedi.xyz/builders' target="_blank">Fedi (on Mobile)</a> or <a href='https://getalby.com' target="_blank">Alby (in browser)</a> to use Chat LN.
+                            Please use a WebLN enabled application like <a className="text-blue-500" href='https://fedi.xyz/builders' target="_blank">Fedi (on Mobile)</a> or <a className="text-blue-500" href='https://getalby.com' target="_blank">Alby (in browser)</a> to use Chat LN.
                         </div>
                         <div className="mb-2">
                             Chat LN lets you pay for expensive language model API calls using lightning. We learn nothing about you except that you paid us!
