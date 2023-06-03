@@ -6,7 +6,7 @@ import wasm from '../../node_modules/@dqbd/tiktoken/lite/tiktoken_bg.wasm?module
 
 import tiktokenModel from '@dqbd/tiktoken/encoders/cl100k_base.json';
 import { Tiktoken, init } from '@dqbd/tiktoken/lite/init';
-import { OpenAIModel } from '@/types/openai';
+import { OpenAIModel, OpenAIModels } from '@/types/openai';
 import * as bolt11 from 'bolt11';
 
 const key = process.env.OPENAI_API_KEY;
@@ -36,15 +36,17 @@ const decodeAuthHeader = (authHeader: string) => {
     throw new Error('Invalid macaroon:preimage format');
   }
   
-  return { verifyHash: splitMacaroon[0], preimage: splitMacaroon[1], invoice: invoiceParts[1] };
+  return { verifyHash: splitMacaroon[0].replace(/"/g, ''), preimage: splitMacaroon[1], invoice: invoiceParts[1] };
 };
 
 // This is your checkInvoicePaid function
 const checkInvoicePaid = async (authHeader: string) => {
   const { verifyHash, preimage, invoice } = decodeAuthHeader(authHeader);
+  console.log('verifyURL:', `${lightning_verify}/${verifyHash}`);
   const response = await fetch(`${lightning_verify}/${verifyHash}`);
   const data = await response.json();
-  if (data.settled !== true || data.preimage !== preimage) {
+  console.log('data', data)
+  if (data.settled !== true || data.preimage !== preimage || data.pr !== invoice) {
     console.log('Invoice not paid, reissuing');
     return false;
   }
@@ -55,12 +57,14 @@ const getL402 = async (amount: number) => {
   amount = Math.max(amount, 1000);
   const response = await fetch(`${lightning_callback}?amount=${amount}`);
   const json_response = await response.json();
+  console.log('json_response callback', json_response);
   // TODO: save the verify hash for later
-  const verify_hash = json_response.verify.split('/')[-1];
-  return `LSAT macaroon="${verify_hash}:" invoice="${json_response.pr}"`;
+  const verify_hash = json_response.verify.split('/').pop();
+  return `LSAT macaroon="${verify_hash}" invoice="${json_response.pr}"`;
 };
 
 const getAmount = (tokenCount: number, model: OpenAIModel) => {
+  console.log('model', model)
   const tokensPer1K = tokenCount / 1000;
   const amount = Math.ceil(tokensPer1K * model.msatsPer1K);
   console.log('amount', amount);
@@ -69,8 +73,13 @@ const getAmount = (tokenCount: number, model: OpenAIModel) => {
 
 const handler = async (req: Request): Promise<Response> => {
   try {
-    const { model, messages, prompt, temperature } = (await req.json()) as ChatBody;
-
+    let { model, messages, prompt, temperature } = (await req.json()) as ChatBody;
+    // match model.id to model from OpenAIModels
+    model = OpenAIModels[model.id]; 
+    if (!model) {
+      throw new Error('Invalid model');
+    }
+    console.log('first model', model)
     await init((imports) => WebAssembly.instantiate(wasm, imports));
     const encoding = new Tiktoken(
       tiktokenModel.bpe_ranks,
