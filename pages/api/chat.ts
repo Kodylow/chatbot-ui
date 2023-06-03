@@ -42,12 +42,9 @@ const decodeAuthHeader = (authHeader: string) => {
 // This is your checkInvoicePaid function
 const checkInvoicePaid = async (authHeader: string) => {
   const { verifyHash, preimage, invoice } = decodeAuthHeader(authHeader);
-  console.log('verifyURL:', `${lightning_verify}/${verifyHash}`);
   const response = await fetch(`${lightning_verify}/${verifyHash}`);
   const data = await response.json();
-  console.log('data', data)
   if (data.settled !== true || data.preimage !== preimage || data.pr !== invoice) {
-    console.log('Invoice not paid, reissuing');
     return false;
   }
   return true;
@@ -57,17 +54,14 @@ const getL402 = async (amount: number) => {
   amount = Math.max(amount, 1000);
   const response = await fetch(`${lightning_callback}?amount=${amount}`);
   const json_response = await response.json();
-  console.log('json_response callback', json_response);
   // TODO: save the verify hash for later
   const verify_hash = json_response.verify.split('/').pop();
   return `LSAT macaroon="${verify_hash}" invoice="${json_response.pr}"`;
 };
 
 const getAmount = (tokenCount: number, model: OpenAIModel) => {
-  console.log('model', model)
   const tokensPer1K = tokenCount / 1000;
   const amount = Math.ceil(tokensPer1K * model.msatsPer1K);
-  console.log('amount', amount);
   return amount;
 };
 
@@ -79,7 +73,6 @@ const handler = async (req: Request): Promise<Response> => {
     if (!model) {
       throw new Error('Invalid model');
     }
-    console.log('first model', model)
     await init((imports) => WebAssembly.instantiate(wasm, imports));
     const encoding = new Tiktoken(
       tiktokenModel.bpe_ranks,
@@ -100,7 +93,6 @@ const handler = async (req: Request): Promise<Response> => {
     const prompt_tokens = encoding.encode(promptToSend);
 
     let tokenCount = prompt_tokens.length;
-    console.log('tokenCount', tokenCount);
     let messagesToSend: Message[] = [];
 
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -110,7 +102,6 @@ const handler = async (req: Request): Promise<Response> => {
       if (tokenCount + tokens.length + 1000 > model.tokenLimit) {
         break;
       }
-      console.log(`adding ${tokens.length} tokens for message ${i}`)
       tokenCount += tokens.length;
       messagesToSend = [message, ...messagesToSend];
     }
@@ -122,7 +113,6 @@ const handler = async (req: Request): Promise<Response> => {
     const auth_header = headers.get('www-authenticate');
 
     if (!auth_header || !await checkInvoicePaid(auth_header)) {
-      console.log('bad www-authenticate header')
       const amount = getAmount(tokenCount, model);
       const l402 = await getL402(amount);
       // return a 402 Payment Required response with the invoice in the www-authenticate header

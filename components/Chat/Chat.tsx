@@ -133,28 +133,19 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         });
         // handle 402 payment required
         if (response.status === 402) {
-          console.log('In Payment required')
           const auth_header = response.headers.get('www-authenticate');
-          console.log('auth_header', auth_header)
           let {macaroon, invoice} = decodeAuthHeader(auth_header ? auth_header : '');
-          console.log('macaroon', macaroon)
           // remove double quotes from invoice
           invoice = invoice.replace(/"/g, '');
-          console.log('invoice', invoice)
           if (typeof window.webln !== 'undefined') {
-            console.log('webln is defined')
             try {
-              console.log('trying to enable webln')
               await window.webln.enable();
-              console.log('webln enabled')
               const { preimage } = await window.webln.sendPayment(
                 invoice,
               );
-              console.log('preimage', preimage)
               if (!!preimage) {
                 macaroon = macaroon + ':' + preimage;
                 let auth_header = `LSAT macaroon=${macaroon} invoice=${invoice}`;
-                console.log('auth_header', auth_header)
                 response = await fetch(endpoint, {
                   method: 'POST',
                   headers: {
