@@ -38,6 +38,22 @@ interface Props {
   stopConversationRef: MutableRefObject<boolean>;
 }
 
+// This is the helper function to decode the invoice and preimage from the www-authenticate header
+const decodeAuthHeader = (authHeader: string) => {
+  const parts = authHeader.split(' ');
+  if (parts.length !== 3) {
+    throw new Error('Invalid authHeader format');
+  }
+
+  const macaroonParts = parts[1].split('=');
+  const invoiceParts = parts[2].split('=');
+  if (macaroonParts.length !== 2 || invoiceParts.length !== 2 || macaroonParts[0] !== 'macaroon' || invoiceParts[0] !== 'invoice') {
+    throw new Error('Invalid authHeader format');
+  }
+  
+  return { macaroon: macaroonParts[1], invoice: invoiceParts[1] };
+};
+
 export const Chat = memo(({ stopConversationRef }: Props) => {
   const { t } = useTranslation('chat');
 
@@ -115,6 +131,12 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           signal: controller.signal,
           body,
         });
+        // handle 402 payment required
+        if (response.status === 402) {
+          const auth_header = response.headers.get('www-authenticate');
+          const {macaroon, invoice} = decodeAuthHeader(auth_header ? auth_header : '');
+          
+        }
         if (!response.ok) {
           homeDispatch({ field: 'loading', value: false });
           homeDispatch({ field: 'messageIsStreaming', value: false });
