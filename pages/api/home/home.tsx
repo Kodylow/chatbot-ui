@@ -338,7 +338,7 @@ const Home = ({
             }}
         >
             <Head>
-                <title>ChatLN</title>
+                <title>LN GPT</title>
                 <meta name="description" content="Chatbot-UI but with bitcoin." />
                 <meta
                     name="viewport"

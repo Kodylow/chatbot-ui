@@ -318,8 +318,8 @@ export const ChatInput = ({
                             bottom: `${textareaRef?.current?.scrollHeight}px`,
                             maxHeight: '400px',
                             overflow: `${textareaRef.current && textareaRef.current.scrollHeight > 400
-                                    ? 'auto'
-                                    : 'hidden'
+                                ? 'auto'
+                                : 'hidden'
                                 }`,
                         }}
                         placeholder={
@@ -384,11 +384,11 @@ export const ChatInput = ({
                     rel="noreferrer"
                     className="underline"
                 >
-                    ChatLN
+                    LN GPT
                 </a>
-                .{'ChatLN'}
+                .{'LN GPT'}
                 {t(
-                    "ChatLN is a bitcoin powered advanced chatbot kit for OpenAI's chat models aiming to mimic ChatGPT's interface and functionality.",
+                    " LN GPT is a bitcoin powered chatbot kit for OpenAI's chat models aiming to mimic ChatGPT's interface and functionality.",
                 )}
             </div>
         </div>

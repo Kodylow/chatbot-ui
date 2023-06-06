@@ -405,25 +405,25 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             {!window.webln ? (
                 <div className="mx-auto flex h-full w-[300px] flex-col justify-center space-y-6 sm:w-[600px]">
                     <div className="text-center text-4xl font-bold text-black dark:text-white">
-                        Welcome to Chat LN
+                        Welcome to LN GPT
                     </div>
                     <div className="text-center text-gray-500 dark:text-gray-400">
                         <div className="mb-2 text-red-500 text-lg">
-                            Please use a WebLN enabled application like <a className="text-blue-500" href='https://fedi.xyz/builders' target="_blank">Fedi (on Mobile)</a> or <a className="text-blue-500" href='https://getalby.com' target="_blank">Alby (in browser)</a> to use Chat LN.
+                            Please use a WebLN enabled application like <a className="text-blue-500" href='https://fedi.xyz/builders' target="_blank">Fedi (on Mobile)</a> or <a className="text-blue-500" href='https://getalby.com' target="_blank">Alby (in browser)</a> to use LN GPT.
                         </div>
                         <div className="mb-2">
-                            Chat LN lets you pay for expensive language model API calls using lightning. We learn nothing about you except that you paid us!
+                            LN GPT lets you pay for expensive language model API calls using lightning. We learn nothing about you except that you paid us!
                         </div>
                     </div>
                 </div>
             ) : !serverSideApiKeyIsSet ? (
                 <div className="mx-auto flex h-full w-[300px] flex-col justify-center space-y-6 sm:w-[600px]">
                     <div className="text-center text-4xl font-bold text-black dark:text-white">
-                        Welcome to Chat LN
+                        Welcome to LN GPT
                     </div>
                     <div className="text-center text-lg text-black dark:text-white">
                         <div className="mb-2 font-bold">
-                            Important: Chat LN is a bitcoin & lightning enabled fork of Chatbot UI and is 100% unaffiliated with OpenAI.
+                            Important: LN GPT is a bitcoin & lightning enabled fork of Chatbot UI and is 100% unaffiliated with OpenAI.
                         </div>
                     </div>
                     <div className="text-center text-lg text-red-500">
@@ -450,7 +450,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                                                 <Spinner size="16px" className="mx-auto" />
                                             </div>
                                         ) : (
-                                            'ChatLN'
+                                            'LN GPT'
                                         )}
                                     </div>
 
