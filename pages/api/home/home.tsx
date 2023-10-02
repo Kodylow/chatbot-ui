@@ -227,7 +227,7 @@ const Home = ({
         if (window.innerWidth < 640) {
             dispatch({ field: 'showChatbar', value: false });
         }
-    }, [selectedConversation]);
+    }, [selectedConversation, dispatch]);
 
     useEffect(() => {
         defaultModelId &&
@@ -242,7 +242,7 @@ const Home = ({
                 field: 'serverSidePluginKeysSet',
                 value: serverSidePluginKeysSet,
             });
-    }, [defaultModelId, serverSideApiKeyIsSet, serverSidePluginKeysSet]);
+    }, [defaultModelId, serverSideApiKeyIsSet, serverSidePluginKeysSet, dispatch]);
 
     // ON LOAD --------------------------------------------
 
@@ -323,6 +323,8 @@ const Home = ({
         dispatch,
         serverSideApiKeyIsSet,
         serverSidePluginKeysSet,
+        conversations,
+        t
     ]);
 
     return (
@@ -350,7 +352,7 @@ const Home = ({
                 <main
                     className={`flex h-screen w-screen flex-col text-sm text-white dark:text-white ${lightMode}`}
                 >
-                    <div className="fixed top-0 w-full sm:hidden">
+                    <div className="fixed top-0 w-full">
                         <Navbar
                             selectedConversation={selectedConversation}
                             onNewConversation={handleNewConversation}

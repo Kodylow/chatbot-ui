@@ -136,10 +136,10 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                     const auth_header = response.headers.get('www-authenticate');
                     let { macaroon, invoice } = decodeAuthHeader(auth_header ? auth_header : '');
                     invoice = invoice.replace(/"/g, '');
-                    if (typeof window.webln !== 'undefined') {
+                    if (typeof (window as any).webln !== 'undefined') {
                         try {
-                            await window.webln.enable();
-                            const { preimage } = await window.webln.sendPayment(
+                            await (window as any).webln.enable();
+                            const { preimage } = await (window as any).webln.sendPayment(
                                 invoice,
                             );
                             if (!!preimage) {
@@ -304,6 +304,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             conversations,
             selectedConversation,
             stopConversationRef,
+            homeDispatch
         ],
     );
 
@@ -402,7 +403,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
 
     return (
         <div className="relative flex-1 overflow-hidden bg-white dark:bg-[#343541]">
-            {!window.webln ? (
+            {!(window as any).webln ? (
                 <div className="mx-auto flex h-full w-[300px] flex-col justify-center space-y-6 sm:w-[600px]">
                     <div className="text-center text-4xl font-bold text-black dark:text-white">
                         Welcome to LN GPT
@@ -450,64 +451,14 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                                                 <Spinner size="16px" className="mx-auto" />
                                             </div>
                                         ) : (
-                                            'LN GPT'
+                                            ''
                                         )}
                                     </div>
 
-                                    {models.length > 0 && (
-                                        <div className="flex h-full flex-col space-y-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-600">
-                                            <ModelSelect />
-
-                                            <SystemPrompt
-                                                conversation={selectedConversation}
-                                                prompts={prompts}
-                                                onChangePrompt={(prompt) =>
-                                                    handleUpdateConversation(selectedConversation, {
-                                                        key: 'prompt',
-                                                        value: prompt,
-                                                    })
-                                                }
-                                            />
-
-                                            <TemperatureSlider
-                                                label={t('Temperature')}
-                                                onChangeTemperature={(temperature) =>
-                                                    handleUpdateConversation(selectedConversation, {
-                                                        key: 'temperature',
-                                                        value: temperature,
-                                                    })
-                                                }
-                                            />
-                                        </div>
-                                    )}
                                 </div>
                             </>
                         ) : (
                             <>
-                                <div className="sticky top-0 z-10 flex justify-center border border-b-neutral-300 bg-neutral-100 py-2 text-sm text-neutral-500 dark:border-none dark:bg-[#444654] dark:text-neutral-200">
-                                    {t('Model')}: {selectedConversation?.model.name} | {t('Temp')}
-                                    : {selectedConversation?.temperature} |
-                                    <button
-                                        className="ml-2 cursor-pointer hover:opacity-50"
-                                        onClick={handleSettings}
-                                    >
-                                        <IconSettings size={18} />
-                                    </button>
-                                    <button
-                                        className="ml-2 cursor-pointer hover:opacity-50"
-                                        onClick={onClearAll}
-                                    >
-                                        <IconClearAll size={18} />
-                                    </button>
-                                </div>
-                                {showSettings && (
-                                    <div className="flex flex-col space-y-10 md:mx-auto md:max-w-xl md:gap-6 md:py-3 md:pt-6 lg:max-w-2xl lg:px-0 xl:max-w-3xl">
-                                        <div className="flex h-full flex-col space-y-4 border-b border-neutral-200 p-4 dark:border-neutral-600 md:rounded-lg md:border">
-                                            <ModelSelect />
-                                        </div>
-                                    </div>
-                                )}
-
                                 {selectedConversation?.messages.map((message, index) => (
                                     <MemoizedChatMessage
                                         key={index}

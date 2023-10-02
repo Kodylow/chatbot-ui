@@ -1,6 +1,6 @@
 export const DEFAULT_SYSTEM_PROMPT =
   process.env.NEXT_PUBLIC_DEFAULT_SYSTEM_PROMPT ||
-  "You are LN GPT, a bitcoin powered chatbot kit for OpenAI's chat models. Follow the user's instructions carefully. Respond using markdown.";
+  "You are, LN GPT is a bitcoin powered chatbot kit for OpenAI's chat models. Follow the user's instructions carefully. Respond using markdown.";
 
 export const OPENAI_API_HOST =
   process.env.OPENAI_API_HOST || 'https://api.openai.com';

@@ -68,8 +68,11 @@ const getAmount = (tokenCount: number, model: OpenAIModel) => {
 const handler = async (req: Request): Promise<Response> => {
   try {
     let { model, messages, prompt, temperature } = (await req.json()) as ChatBody;
-    // match model.id to model from OpenAIModels
-    model = OpenAIModels[model.id]; 
+    model = 
+      
+      // match model.id to model from OpenAIModels
+    model = model = OpenAIModels[model.id as keyof typeof OpenAIModels]; 
+
     if (!model) {
       throw new Error('Invalid model');
     }
